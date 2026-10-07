@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macro Showdown: Scored</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Lexend:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1a1033; --paper:#fff8e1; --yellow:#ffe14d; --pink:#ff4fa3; --cyan:#2dc8ff;
+    --violet:#7c4dff; --green:#20d07a; --red:#ff4d4d;
+    --display:'Bungee','Impact','Arial Black',sans-serif;
+    --body:'Lexend','Trebuchet MS','Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--body); color:var(--ink); overflow:hidden;
+    background:
+      conic-gradient(from 90deg at 2px 2px,#0000 90deg,rgba(26,16,51,.07) 0) 0 0/48px 48px,
+      var(--yellow);
+  }
+  /* floating food/molecule emoji */
+  .floaters{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+  .floaters span{position:absolute;font-size:clamp(28px,5vw,64px);opacity:.28;animation:drift 14s linear infinite}
+  @keyframes drift{from{transform:translateY(110vh) rotate(0)}to{transform:translateY(-20vh) rotate(360deg)}}
+
+  #app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:clamp(10px,2vw,24px);gap:clamp(8px,1.6vw,18px)}
+
+  /* top bar */
+  .top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .badge{font-family:var(--display);background:var(--ink);color:var(--yellow);padding:8px 16px;border-radius:999px;font-size:clamp(14px,1.8vw,22px);white-space:nowrap}
+  .clock{font-family:var(--display);font-size:clamp(14px,1.8vw,22px);background:var(--paper);border:3px solid var(--ink);border-radius:999px;padding:6px 14px;box-shadow:3px 3px 0 var(--ink)}
+  .bar{flex:1;min-width:160px;height:clamp(14px,2vw,22px);background:var(--paper);border:3px solid var(--ink);border-radius:999px;overflow:hidden;box-shadow:3px 3px 0 var(--ink)}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pink),var(--violet),var(--cyan));transition:width .3s linear}
+  .ctrl{display:flex;gap:8px}
+  .ctrl button{font-family:var(--display);font-size:clamp(14px,1.6vw,20px);border:3px solid var(--ink);background:var(--paper);border-radius:12px;padding:6px 12px;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+  .ctrl button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .ctrl button:focus-visible,.go:focus-visible{outline:4px solid var(--violet);outline-offset:3px}
+
+  /* stage */
+  .stage{flex:1;display:flex;flex-direction:column;gap:clamp(10px,2vw,22px);min-height:0}
+  .qrow{display:flex;gap:clamp(12px,2vw,24px);align-items:stretch}
+  .qcard{flex:1;background:var(--paper);border:4px solid var(--ink);border-radius:24px;box-shadow:8px 8px 0 var(--ink);padding:clamp(14px,2.4vw,30px);display:flex;flex-direction:column;justify-content:center;gap:10px;position:relative}
+  .cat{align-self:flex-start;font-family:var(--display);background:var(--violet);color:#fff;border-radius:10px;padding:4px 12px;font-size:clamp(12px,1.4vw,18px);border:3px solid var(--ink)}
+  .qtext{font-weight:800;font-size:clamp(22px,4vw,52px);line-height:1.15}
+  .ring{flex:0 0 auto;width:clamp(96px,15vw,190px);display:flex;align-items:center;justify-content:center;position:relative}
+  .ring svg{width:100%;height:auto;transform:rotate(-90deg)}
+  .ring .track{fill:var(--paper);stroke:var(--ink);stroke-width:12}
+  .ring .prog{fill:none;stroke:var(--pink);stroke-width:12;stroke-linecap:round;stroke-dasharray:289;stroke-dashoffset:0}
+  .ring b{position:absolute;font-family:var(--display);font-size:clamp(40px,7vw,96px);line-height:1}
+  .ring.hurry .prog{stroke:var(--red)}
+  .ring.hurry b{color:var(--red);animation:pop .5s ease-in-out infinite}
+  @keyframes pop{50%{transform:scale(1.15)}}
+
+  .opts{flex:1;display:grid;gap:clamp(10px,1.8vw,20px);grid-template-columns:1fr 1fr;min-height:0}
+  .opts.two{grid-template-rows:1fr}
+  .opt{border:4px solid var(--ink);border-radius:22px;box-shadow:6px 6px 0 var(--ink);display:flex;align-items:center;gap:clamp(10px,1.6vw,20px);padding:clamp(10px,1.8vw,24px);font-weight:700;font-size:clamp(18px,2.9vw,38px);line-height:1.15;transition:transform .25s,opacity .25s,filter .25s}
+  .opt .n{flex:0 0 auto;font-family:var(--display);width:clamp(40px,5.5vw,72px);height:clamp(40px,5.5vw,72px);border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:clamp(22px,3.4vw,44px)}
+  .c0{background:var(--pink)} .c1{background:var(--cyan)} .c2{background:#ffb02e} .c3{background:var(--green)}
+  .opts.two .c0{background:var(--green)} .opts.two .c1{background:var(--pink)}
+  .opts.show .opt:not(.right){opacity:.22;filter:grayscale(.8);transform:scale(.96)}
+  .opts.show .opt.right{background:var(--green);animation:win .6s cubic-bezier(.3,1.6,.5,1) both;box-shadow:0 0 0 8px #fff,10px 10px 0 8px var(--ink);z-index:2}
+  .opts.show .opt.right .n{background:#fff;color:var(--ink)}
+  @keyframes win{0%{transform:scale(.9)}60%{transform:scale(1.07) rotate(-1deg)}100%{transform:scale(1.03)}}
+
+  .hint{text-align:center;font-weight:800;font-size:clamp(14px,2vw,26px)}
+  .why{display:none;background:var(--ink);color:#fff;border-radius:18px;padding:clamp(10px,1.6vw,20px) clamp(14px,2.2vw,28px);font-weight:700;font-size:clamp(16px,2.4vw,32px);box-shadow:6px 6px 0 var(--violet);align-items:center;gap:14px}
+  .why .tag{font-family:var(--display);color:var(--yellow);white-space:nowrap}
+  .why.on{display:flex;animation:slide .35s ease-out both}
+  @keyframes slide{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+
+  /* overlays */
+  .overlay{position:fixed;inset:0;z-index:5;display:none;align-items:center;justify-content:center;flex-direction:column;gap:clamp(14px,2.5vw,28px);text-align:center;padding:24px;background:rgba(255,225,77,.94)}
+  .overlay.on{display:flex}
+  .overlay h1{font-family:var(--display);font-size:clamp(34px,8vw,110px);line-height:1;text-shadow:5px 5px 0 var(--pink),9px 9px 0 var(--ink);color:var(--paper);-webkit-text-stroke:3px var(--ink)}
+  .overlay p{font-weight:800;font-size:clamp(16px,2.6vw,32px);max-width:900px}
+  .go{font-family:var(--display);font-size:clamp(24px,4vw,52px);background:var(--pink);color:#fff;border:5px solid var(--ink);border-radius:22px;padding:14px 44px;cursor:pointer;box-shadow:8px 8px 0 var(--ink)}
+  .go:hover{transform:translate(-2px,-2px)}
+  .go:active{transform:translate(5px,5px);box-shadow:2px 2px 0 var(--ink)}
+  .big{font-family:var(--display);font-size:clamp(120px,32vw,420px);line-height:1;color:var(--paper);-webkit-text-stroke:6px var(--ink);text-shadow:10px 10px 0 var(--violet)}
+  .big.pop{animation:bang .9s ease-out both}
+  @keyframes bang{0%{transform:scale(2.2);opacity:0}30%{opacity:1}100%{transform:scale(.9)}}
+  #pauseOv h1{font-size:clamp(34px,7vw,90px)}
+  canvas#fx{position:fixed;inset:0;z-index:4;pointer-events:none}
+
+  button.opt{font:inherit;font-weight:700;font-size:clamp(18px,2.9vw,38px);color:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  button.opt:not(:disabled):active{transform:translate(3px,3px);box-shadow:3px 3px 0 var(--ink)}
+  .opts.locked .opt:not(.picked){opacity:.5}
+  .opt.picked{outline:6px solid var(--ink);outline-offset:3px;transform:scale(1.03)}
+  .opts.show .opt.wrong{background:var(--red);opacity:1;filter:none;animation:shake .5s both}
+  .opts.show .opt.wrong .n{background:#fff;color:var(--ink)}
+  @keyframes shake{20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+  .nameIn{font:inherit;font-weight:700;font-size:clamp(16px,2.2vw,26px);padding:10px 16px;border:4px solid var(--ink);border-radius:14px;background:var(--paper);width:min(320px,70vw);text-align:center}
+  .nameIn.short{width:90px;margin-left:10px}
+  .bignum{font-family:var(--display);font-size:clamp(70px,16vw,200px);line-height:1;color:var(--paper);-webkit-text-stroke:5px var(--ink);text-shadow:8px 8px 0 var(--violet)}
+  .stats{display:flex;gap:clamp(10px,2vw,24px);flex-wrap:wrap;justify-content:center}
+  .stat{background:var(--paper);border:4px solid var(--ink);border-radius:18px;box-shadow:6px 6px 0 var(--ink);padding:10px 22px;min-width:130px}
+  .stat b{display:block;font-family:var(--display);font-size:clamp(26px,4.5vw,56px)}
+  .stat span{font-weight:700;font-size:clamp(12px,1.6vw,20px)}
+  .why.good .tag{color:#7dffb3} .why.bad .tag{color:#ff9a9a}
+  .opt.badpick{background:var(--red)!important;opacity:1!important;animation:shake .5s both}
+  .opt.badpick .n{background:#fff;color:var(--ink)}
+  @media (max-width:640px){
+    .qrow{flex-direction:column-reverse;align-items:center}
+    .ring{width:92px}
+    .qcard{width:100%}
+    .opts{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .floaters span,.ring.hurry b,.big.pop,.opts.show .opt.right{animation:none}
+  }
+</style>
+</head>
+<body>
+<div class="floaters" id="floaters" aria-hidden="true"></div>
+<canvas id="fx"></canvas>
+
+<div id="app">
+  <div class="top">
+    <div class="badge" id="qcount">READY?</div>
+    <div class="bar" role="progressbar" aria-label="Game progress"><i id="barfill"></i></div>
+    <div class="clock" id="score">0 pts</div>
+    <div class="clock" id="clock">10:00</div>
+    <div class="ctrl">
+      <button id="pauseBtn" title="Pause (Space)">Pause</button>
+      <button id="muteBtn" title="Sound (M)">Sound on</button>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="qrow">
+      <div class="qcard">
+        <span class="cat" id="cat">Macromolecules</span>
+        <div class="qtext" id="qtext">Get ready.</div>
+      </div>
+      <div class="ring" id="ring">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="track" cx="50" cy="50" r="46"/><circle class="prog" id="prog" cx="50" cy="50" r="46"/></svg>
+        <b id="secs">15</b>
+      </div>
+    </div>
+    <div class="opts" id="opts"></div>
+        <div class="why" id="why"><span class="tag" id="tag">ANSWER</span><span id="whytext"></span></div>
+  </div>
+</div>
+
+<!-- start -->
+<div class="overlay on" id="startOv">
+  <h1>Macro<br>Showdown</h1>
+  <p>10 minutes on the clock. Tap your answer. Get it right and you move on right away. Get it wrong and you wait out the 15 seconds. Faster picks and streaks earn more points.</p>
+  <input id="nameIn" class="nameIn" placeholder="Name (optional)" maxlength="20" autocomplete="off"><input id="hrIn" class="nameIn short" placeholder="Hr" maxlength="3" autocomplete="off">
+  <button class="go" id="startBtn">Lock in</button>
+  <p style="font-size:clamp(13px,1.8vw,20px);font-weight:700">On iPad: turn the side switch off silent and turn the volume up.<br>Keys 1-4 pick an answer &nbsp; Space = pause &nbsp; M = mute</p>
+</div>
+
+<!-- countdown -->
+<div class="overlay" id="introOv"><div class="big" id="introNum">3</div></div>
+
+<!-- pause -->
+<div class="overlay" id="pauseOv"><h1>Paused</h1><button class="go" id="resumeBtn">Keep going</button></div>
+
+<!-- end -->
+<div class="overlay" id="endOv">
+  <h1>Final<br>Score</h1>
+  <div class="bignum" id="finalScore">0</div>
+  <p id="rank" style="font-family:var(--display)"></p>
+  <div class="stats" id="stats"></div>
+  <button class="go" id="againBtn">Run it back</button>
+</div>
+
+<script>
+(() => {
+  const Q_SECS = 15, INTRO_SECS = 3, GAME_SECS = 600, A_SECS = 4, OK_SECS = 2.5;
+
+  /* ---------- Questions: 3.1 quiz, macro notes + card sort, food label activity ---------- */
+  const FULL = [
+    {cat:"Quiz 3.1", q:"If a necklace were a macromolecule, what would the MONOMER be?", a:"The individual link", w:["The whole necklace","The clasp","The jewelry box"], why:"A monomer is one small unit. The polymer is the whole chain."},
+    {cat:"Quiz 3.1", q:"What are the 6 most common elements in the body?", a:"H, C, O, N, S, P", w:["B, O, P, S, N, C","C, U, H, P, S, O","C, H, O, S, Ca, F"], why:"CHONSP. Hydrogen, carbon, oxygen, nitrogen, sulfur, phosphorus."},
+    {cat:"Quiz 3.1", q:"The monomers of proteins are ____.", a:"Amino acids", w:["Fatty acids","Mono acids","Nucleic acids"], why:"Amino acids link up to build proteins."},
+    {cat:"Quiz 3.1", q:"Which macromolecule is your body's source of QUICK energy?", a:"Carbohydrates", w:["Proteins","Nucleic acids","Lipids"], why:"Carbs are short-term energy. Think pregame pasta."},
+    {cat:"Quiz 3.1", q:"A bodybuilder reading a food label focuses most on the amount of ____.", a:"Protein", w:["Carbohydrates","Lipids","Nucleic acids"], why:"Protein builds and repairs muscle."},
+    {cat:"Quiz 3.1", q:"DNA is a ____, and its monomer is a ____.", a:"Nucleic acid; nucleotide", w:["Protein; amino acid","Carbohydrate; monosaccharide","Lipid; glycerol + 3 fatty acids"], why:"DNA stores genetic info and is built from nucleotides."},
+    {cat:"Quiz 3.1", q:"Which macromolecule is used for INSULATION and long-term energy storage?", a:"Lipids", w:["Proteins","Nucleic acids","Carbohydrates"], why:"Lipids (fats) store energy for the long haul and keep you warm."},
+    {cat:"Quiz 3.1", q:"This macromolecule is in pasta, carrots, fruit, and bread.", a:"Carbohydrate", w:["Protein","Nucleic acid","Lipid"], why:"All of those foods are carb-heavy."},
+    {cat:"Quiz 3.1", q:"Which one is NOT a polymer?", a:"Amino acids", w:["Proteins","Carbohydrates","Nucleic acids"], why:"Amino acids are monomers. They are the pieces that build the protein polymer."},
+    {cat:"Quiz 3.1", q:"Why is carbon so important for the four macromolecules?", a:"It forms 4 bonds and can build long chains", w:["It is the only element in macromolecules","It only forms 2 bonds and gives us energy","It is best friends with all four macromolecules"], why:"Four bonds means long chains, branches, and rings."},
+    {cat:"Quiz 3.1", q:"A bear needs to store energy for winter. It should eat a lot of ____.", a:"Lipids", w:["Proteins","Carbs","Nucleic acids"], why:"Fat is long-term energy storage. That is why bears go all in on salmon and berries."},
+    {cat:"Quiz 3.1", q:"The monomer of a carbohydrate is a ____.", a:"Monosaccharide", w:["Amino acid","Nucleotide","Fatty acid"], why:"Mono = one, saccharide = sugar. One sugar unit."},
+    {cat:"Quiz 3.1", q:"The monomer of a nucleic acid is a ____.", a:"Nucleotide", w:["Amino acid","Monosaccharide","Fatty acid"], why:"Nucleotides link up to make DNA and RNA."},
+    {cat:"Quiz 3.1", q:"A typical lipid is built from glycerol plus how many fatty acids?", a:"3 fatty acids", w:["1 fatty acid","2 fatty acids","5 fatty acids"], why:"Glycerol + 3 fatty acids. Three tails."},
+    {cat:"Quiz 3.1", tf:true, q:"TRUE or FALSE: Amino acids are polymers.", a:"False", w:["True"], why:"Amino acids are monomers. Proteins are the polymers."},
+    {cat:"Quiz 3.1", tf:true, q:"TRUE or FALSE: All four macromolecules are built around carbon.", a:"True", w:["False"], why:"Carbon is the backbone of every macromolecule."},
+    {cat:"Quiz 3.1", q:"Which monomer and macromolecule are matched correctly?", a:"Nucleotide and nucleic acid", w:["Amino acid and carbohydrate","Fatty acid and protein","Monosaccharide and lipid"], why:"Nucleotides build nucleic acids. The other pairs are mixed up."},
+    {cat:"Macro Notes", q:"The prefix 'macro' means ____.", a:"Large", w:["Small","Fast","Liquid"], why:"So a macromolecule is a LARGE molecule."},
+    {cat:"Macro Notes", tf:true, q:"TRUE or FALSE: A polymer is made of many monomers linked together.", a:"True", w:["False"], why:"Many monomers + links = one polymer."},
+    {cat:"Macro Notes", q:"Monosaccharides are the monomers that build ____.", a:"Carbohydrates", w:["Proteins","Lipids","Nucleic acids"], why:"Mono = one, saccharide = sugar. One sugar unit."},
+    {cat:"Macro Notes", q:"Fatty acids are the monomers that build ____.", a:"Lipids", w:["Carbohydrates","Proteins","Nucleic acids"], why:"Lipids are built from fatty acids (plus glycerol)."},
+    {cat:"Macro Notes", q:"Which macromolecule builds body structures like muscle?", a:"Proteins", w:["Lipids","Carbohydrates","Nucleic acids"], why:"Proteins are your body's building materials."},
+    {cat:"Macro Notes", q:"'Mono' in the word monomer means ____.", a:"One", w:["Two","Many","Large"], why:"Mono = one. A monomer is ONE unit."},
+    {cat:"Macro Notes", q:"'Poly' in the word polymer means ____.", a:"Many", w:["One","Small","Fast"], why:"Poly = many. A polymer is MANY units."},
+    {cat:"Macro Notes", q:"Which macromolecule stores genetic information?", a:"Nucleic acids", w:["Proteins","Lipids","Carbohydrates"], why:"DNA and RNA hold the instructions for building you."},
+    {cat:"Macro Notes", q:"Nucleotides are the monomers that build ____.", a:"Nucleic acids", w:["Proteins","Carbohydrates","Lipids"], why:"Nucleotides build DNA and RNA."},
+    {cat:"Macro Notes", q:"Amino acids are the monomers that build ____.", a:"Proteins", w:["Lipids","Carbohydrates","Nucleic acids"], why:"Amino acids link into chains that fold into proteins."},
+    {cat:"Macro Notes", q:"Which food is mainly a CARBOHYDRATE?", a:"Rice", w:["Steak","Butter","Eggs"], why:"Rice, pasta, bread, and fruit are carb foods."},
+    {cat:"Macro Notes", q:"Which food is a great source of LIPIDS?", a:"Olive oil", w:["Rice","White bread","Apple"], why:"Oils and butters are lipids."},
+    {cat:"Macro Notes", tf:true, q:"TRUE or FALSE: Lipids are used for long-term energy storage.", a:"True", w:["False"], why:"Fat is the long-term energy bank. Carbs are the quick cash."},
+    {cat:"Macro Notes", q:"Which of these is a MONOMER?", a:"Nucleotide", w:["DNA","Protein","Lipid"], why:"A nucleotide is one unit. DNA is the whole chain."},
+    {cat:"Card Sort", q:"Which macromolecule contains PHOSPHORUS (P)?", a:"Nucleic acids", w:["Carbohydrates","Proteins","Lipids"], why:"Nucleotides have a phosphate group. Think DNA and RNA."},
+    {cat:"Card Sort", q:"Which TWO macromolecules contain NITROGEN (N)?", a:"Proteins and nucleic acids", w:["Carbs and lipids","Carbs and proteins","Lipids and nucleic acids"], why:"Amino acids and nucleotides both have nitrogen."},
+    {cat:"Card Sort", q:"Which statement about carbon is NOT true?", a:"It can only form 1 bond", w:["It forms 4 bonds","It can form chains","It can form rings"], why:"Carbon forms 4 bonds, double bonds, chains, and rings. That is why it is the MVP."},
+    {cat:"Card Sort", q:"In CHONSP, what does the S stand for?", a:"Sulfur", w:["Sodium","Silicon","Sugar"], why:"C-H-O-N-S-P: carbon, hydrogen, oxygen, nitrogen, sulfur, phosphorus."},
+    {cat:"Card Sort", q:"Which one is NOT one of the 6 main elements in macromolecules?", a:"Iron (Fe)", w:["Carbon (C)","Oxygen (O)","Nitrogen (N)"], why:"The big six are C, H, O, N, S, P."},
+    {cat:"Food Label Lab", q:"Chicken, eggs, and beans are mostly made of ____.", a:"Protein", w:["Carbohydrates","Lipids","Nucleic acids"], why:"Meats, eggs, beans, and nuts are protein-packed."},
+    {cat:"Food Label Lab", q:"Butter, oils, and avocado are mostly ____.", a:"Lipids", w:["Carbohydrates","Proteins","Nucleic acids"], why:"Fats and oils are lipids."},
+    {cat:"Food Label Lab", q:"'Total Fat' on a nutrition label is which macromolecule?", a:"Lipids", w:["Proteins","Carbohydrates","Nucleic acids"], why:"Fat on the label = lipids."},
+    {cat:"Food Label Lab", q:"Sugars and dietary fiber on a food label are types of ____.", a:"Carbohydrates", w:["Proteins","Lipids","Nucleic acids"], why:"Both fall under Total Carbohydrate."},
+    {cat:"Food Label Lab", tf:true, q:"TRUE or FALSE: Nucleic acids are listed in boldface on food labels.", a:"False", w:["True"], why:"Bold items are fat, carbs, and protein. Nucleic acids are not listed."},
+    {cat:"Food Label Lab", q:"What does 'carb loading' mean?", a:"Eating lots of carbs before a big event for energy", w:["Cutting out all carbs","Carrying heavy groceries","Storing carbs in your backpack"], why:"Athletes load up on carbs so they have quick energy ready to go."},
+    {cat:"Food Label Lab", q:"'Cholesterol' on a nutrition label is classified with which macromolecule?", a:"Lipids", w:["Proteins","Carbohydrates","Nucleic acids"], why:"Cholesterol is a fat-type molecule, so it goes with lipids."},
+    {cat:"Food Label Lab", q:"A snack has 20 g protein, 5 g fat, and 3 g carbs. It has the MOST of which macromolecule?", a:"Protein", w:["Lipids","Carbohydrates","Nucleic acids"], why:"20 grams beats 5 and 3. Gym snack energy."},
+    {cat:"Food Label Lab", q:"A sports drink has 30 g sugar, 0 g fat, and 0 g protein. It is basically all ____.", a:"Carbohydrates", w:["Lipids","Proteins","Nucleic acids"], why:"Sugar is a carbohydrate. Quick energy, nothing else."},
+    {cat:"Food Label Lab", q:"An ingredient list says 'vegetable oil.' That ingredient is mostly ____.", a:"Lipids", w:["Proteins","Carbohydrates","Nucleic acids"], why:"Oils are lipids, and they count toward Total Fat."},
+    {cat:"Food Label Lab", q:"A protein shake lists 'whey protein.' What monomers is that protein built from?", a:"Amino acids", w:["Fatty acids","Monosaccharides","Nucleotides"], why:"All proteins are chains of amino acids."}
+  ];
+  let BANK = FULL.slice();
+  function pickQuestions(){ return shuffle(FULL); }
+
+  const TAGS = ["Easy W","Locked in","No cap","Certified","Big brain","Straight facts","You knew this","Say it with me"];
+  const EMOJI = ["🥩","🍞","🧈","🧬","🥑","🍝","🥚","🐻","🥕","🧪","🍗","🥜"];
+
+  /* ---------- helpers ---------- */
+  const $ = id => document.getElementById(id);
+  const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+  const TOTAL_SECS = GAME_SECS;
+  const fmt = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); };
+
+  // floating emoji background
+  const fl = $("floaters");
+  for (let i=0;i<14;i++){
+    const s = document.createElement("span");
+    s.textContent = EMOJI[i % EMOJI.length];
+    s.style.left = (i*7.3 % 100) + "%";
+    s.style.animationDuration = (11 + (i*3)%9) + "s";
+    s.style.animationDelay = (-(i*2.1)%14) + "s";
+    fl.appendChild(s);
+  }
+
+  /* ---------- sound (WebAudio: effects + looping beat) ---------- */
+  let audio = null, master = null, muted = false;
+  /* iOS/iPadOS: Web Audio is silenced by the side switch unless the page is treated as media playback */
+  let silentEl = null;
+  function unlockIOS(){
+    try{ if (navigator.audioSession) navigator.audioSession.type = "playback"; }catch(e){}
+    try{
+      if (!silentEl){
+        const n = 8000, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
+        const w = (o, t) => { for (let i=0;i<t.length;i++) v.setUint8(o+i, t.charCodeAt(i)); };
+        w(0,"RIFF"); v.setUint32(4,36+n,true); w(8,"WAVE"); w(12,"fmt "); v.setUint32(16,16,true);
+        v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,8000,true); v.setUint32(28,8000,true);
+        v.setUint16(32,1,true); v.setUint16(34,8,true); w(36,"data"); v.setUint32(40,n,true);
+        for (let i=0;i<n;i++) v.setUint8(44+i,128);
+        silentEl = new Audio(URL.createObjectURL(new Blob([buf],{type:"audio/wav"})));
+        silentEl.loop = true; silentEl.setAttribute("playsinline","");
+      }
+      const p = silentEl.play(); if (p && p.catch) p.catch(()=>{});
+    }catch(e){}
+  }
+  function ac(){
+    unlockIOS();
+    if (!audio){
+      try{
+        audio = new (window.AudioContext||window.webkitAudioContext)();
+        const comp = audio.createDynamicsCompressor();
+        master = audio.createGain(); master.gain.value = 1;
+        master.connect(comp); comp.connect(audio.destination);
+      }catch(e){}
+    }
+    if (audio && audio.state !== "running") { const r = audio.resume(); if (r && r.catch) r.catch(()=>{}); }
+    return audio;
+  }
+  function tone(freq, dur, type, vol, at){
+    const a = ac(); if (!a || muted) return;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, at);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(vol, at + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    o.connect(g); g.connect(master); o.start(at); o.stop(at + dur + 0.02);
+  }
+  function beep(freq, dur, type="square", vol=.3, when=0){ const a = ac(); if(a) tone(freq, dur, type, vol, a.currentTime + when); }
+  const sTick = () => beep(1000,.12,"square",.35);
+  const sGo   = () => { beep(523,.15,"triangle",.5); beep(784,.25,"triangle",.5,.1); };
+  const sWin  = () => { [523,659,784,1047].forEach((f,i)=>beep(f,.22,"triangle",.5,i*.09)); };
+  const sBad  = () => { beep(196,.25,"sawtooth",.4); beep(147,.35,"sawtooth",.4,.18); };
+  const sEnd  = () => { [523,659,784,1047,1319].forEach((f,i)=>beep(f,.3,"triangle",.55,i*.12)); };
+
+  // looping beat: kick + bass + arpeggio (Am - C - G - D)
+  const STEP = 60/124/4, ARP = [[440,523,659,523],[523,659,784,659],[392,494,587,494],[587,740,880,740]], BASS = [110,131,98,147];
+  let musicTimer = null, nextT = 0, mstep = 0;
+  function playStep(at, i){
+    const chord = Math.floor(i/4) % 4, k = i % 4;
+    tone(ARP[chord][k], STEP*.9, "triangle", .13, at);
+    if (k === 0){
+      tone(BASS[chord], STEP*3.6, "sawtooth", .12, at);
+      const a = audio, o = a.createOscillator(), g = a.createGain();   // kick
+      o.frequency.setValueAtTime(160, at); o.frequency.exponentialRampToValueAtTime(40, at+.12);
+      g.gain.setValueAtTime(.55, at); g.gain.exponentialRampToValueAtTime(.001, at+.15);
+      o.connect(g); g.connect(master); o.start(at); o.stop(at+.16);
+    }
+    if (k === 2) tone(1800, .04, "square", .05, at);                    // hat tick
+  }
+  function musicTick(){
+    const a = audio; if (!a) return;
+    if (paused || muted || phase === "idle" || phase === "end"){ nextT = a.currentTime + .08; return; }
+    if (nextT < a.currentTime) nextT = a.currentTime + .05;
+    while (nextT < a.currentTime + .3){ playStep(nextT, mstep++); nextT += STEP; }
+  }
+  function startMusic(){ ac(); mstep = 0; nextT = 0; if (!musicTimer) musicTimer = setInterval(musicTick, 100); }
+
+  /* ---------- confetti ---------- */
+  const cv = $("fx"), cx = cv.getContext("2d"); let parts = [];
+  function sizeCv(){ cv.width = innerWidth; cv.height = innerHeight; }
+  addEventListener("resize", sizeCv); sizeCv();
+  function burst(n=90){
+    const colors = ["#ff4fa3","#2dc8ff","#7c4dff","#20d07a","#ffffff","#1a1033"];
+    for (let i=0;i<n;i++) parts.push({x:innerWidth/2,y:innerHeight*.55,vx:(Math.random()-.5)*18,vy:-Math.random()*16-4,s:6+Math.random()*8,c:colors[i%colors.length],r:Math.random()*6,vr:(Math.random()-.5)*.4,life:90+Math.random()*40});
+  }
+  (function fxLoop(){
+    cx.clearRect(0,0,cv.width,cv.height);
+    parts = parts.filter(p => p.life-- > 0);
+    for (const p of parts){ p.vy += .5; p.x += p.vx; p.y += p.vy; p.r += p.vr; cx.save(); cx.translate(p.x,p.y); cx.rotate(p.r); cx.fillStyle = p.c; cx.fillRect(-p.s/2,-p.s/3,p.s,p.s*.6); cx.restore(); }
+    requestAnimationFrame(fxLoop);
+  })();
+
+  /* ---------- game engine ---------- */
+  let played = 0, revealDur = A_SECS, score = 0, streak = 0, bestStreak = 0, correctCt = 0, answered = -1, pickLeft = 0, lastPts = 0, playerName = "";
+  let phase = "idle", t = 0, qi = 0, elapsed = 0, paused = false, last = 0, lastSec = -1, rightIdx = 0;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function showOv(id, on){ $(id).classList.toggle("on", on); }
+
+  function startGame(){
+    startMusic();
+    BANK = pickQuestions(); played = 0; score = 0; streak = 0; bestStreak = 0; correctCt = 0; answered = -1;
+    playerName = ($("nameIn").value || "").trim(); $("score").textContent = "0 pts";
+    qi = 0; t = 0; elapsed = 0; paused = false; lastSec = -1; parts = [];
+    ["startOv","endOv","pauseOv"].forEach(i => showOv(i,false));
+    $("qcount").textContent = "GET READY";
+    $("qtext").textContent = "Get ready."; $("cat").textContent = "Macromolecules";
+    $("opts").innerHTML = ""; $("why").classList.remove("on");
+    phase = "intro"; showOv("introOv", true); $("introNum").textContent = "3"; popNum();
+    $("pauseBtn").textContent = "Pause";
+  }
+
+  function popNum(){ const n = $("introNum"); n.classList.remove("pop"); void n.offsetWidth; if(!reduceMotion) n.classList.add("pop"); }
+
+  function loadQuestion(){
+    const item = BANK[qi];
+    $("qcount").textContent = "Question " + (qi+1);
+    $("cat").textContent = item.cat;
+    $("qtext").textContent = item.q;
+    $("why").classList.remove("on");
+    const wrap = $("opts");
+    wrap.className = "opts" + (item.tf ? " two" : "");
+    // shuffle answer positions for 4-option questions; true/false keeps True on the left
+    let list;
+    if (item.tf) list = item.a === "True" ? ["True","False"] : ["True","False"];
+    else list = shuffle([item.a, ...item.w]);
+    rightIdx = list.indexOf(item.a);
+    wrap.innerHTML = list.map((txt,i) =>
+      `<button class="opt c${i}" data-i="${i}"><span class="n">${i+1}</span><span>${txt}</span></button>`).join("");
+    answered = -1; pickLeft = 0;
+    [...wrap.children].forEach((b,i) => b.addEventListener("click", () => pick(i)));
+    phase = "question"; t = 0; lastSec = -1;
+    $("ring").classList.remove("hurry");
+    sGo();
+  }
+
+  function pick(i){
+    if (phase !== "question" || paused || answered >= 0) return;
+    answered = i; pickLeft = Math.max(0, Q_SECS - t);
+    const wrap = $("opts"); wrap.classList.add("locked");
+    wrap.children[i].classList.add("picked");
+    if (i === rightIdx){ reveal(); return; }          // correct: move forward now
+    wrap.children[i].classList.add("badpick");        // wrong: wait out the clock
+    $("why").classList.remove("good"); $("why").classList.add("bad", "on");
+    $("tag").textContent = "Nope:"; $("whytext").textContent = "Wrong pick. Wait for the clock to hit zero.";
+    sBad();
+  }
+
+  function reveal(){
+    const item = BANK[qi];
+    phase = "reveal"; t = 0; played++;
+    const wrap = $("opts"); wrap.classList.add("show");
+    wrap.children[rightIdx].classList.add("right");
+    wrap.classList.remove("locked");
+    let good = false, prefix = "", tag;
+    if (answered < 0){ streak = 0; tag = "Too slow:"; prefix = "Time's up. "; }
+    else if (answered === rightIdx){
+      good = true; correctCt++; streak++; bestStreak = Math.max(bestStreak, streak);
+      lastPts = 100 + Math.round(50 * pickLeft / Q_SECS) + 10 * Math.min(streak - 1, 5);
+      score += lastPts; tag = TAGS[qi % TAGS.length] + ":"; prefix = "+" + lastPts + " pts. ";
+      $("score").textContent = score + " pts";
+    } else {
+      streak = 0; tag = "Not quite:"; wrap.children[answered].classList.add("wrong");
+    }
+    $("why").classList.toggle("good", good); $("why").classList.toggle("bad", !good);
+    $("tag").textContent = tag;
+    $("whytext").textContent = prefix + item.a + ". " + item.why;
+    $("why").classList.add("on");
+    $("secs").textContent = "✓";
+    $("ring").classList.remove("hurry");
+    $("prog").style.strokeDashoffset = 0;
+    revealDur = good ? OK_SECS : A_SECS;
+    if (good){ if (!reduceMotion) burst(70); sWin(); } else if (answered < 0) sBad();
+  }
+
+  function endGame(){
+    phase = "end"; showOv("endOv", true);
+    const pct = played ? Math.round(correctCt / played * 100) : 0;
+    $("finalScore").textContent = score;
+    $("rank").textContent = (playerName ? playerName + ": " : "") + (pct >= 90 ? "Certified Macro Menace" : pct >= 75 ? "Locked In" : pct >= 60 ? "Getting There" : "Run it back and study up");
+    $("stats").innerHTML =
+      `<div class="stat"><b>${correctCt}/${played}</b><span>Correct</span></div>` +
+      `<div class="stat"><b>${pct}%</b><span>Accuracy</span></div>` +
+      `<div class="stat"><b>${bestStreak}</b><span>Best streak</span></div>`;
+    $("qcount").textContent = "DONE"; $("clock").textContent = "0:00"; $("barfill").style.width = "100%";
+    if (!reduceMotion){ burst(160); setTimeout(()=>burst(120),350); }
+    sEnd();
+  }
+
+  function frame(now){
+    const dt = Math.min(.25, (now - last)/1000); last = now;
+    if (!paused && phase !== "idle" && phase !== "end"){
+      t += dt; elapsed += dt;
+      $("clock").textContent = fmt(TOTAL_SECS - elapsed);
+      $("barfill").style.width = Math.min(100, elapsed / TOTAL_SECS * 100) + "%";
+
+      if (elapsed >= TOTAL_SECS){ endGame(); }
+      else if (phase === "intro"){
+        const left = Math.ceil(INTRO_SECS - t);
+        if (left !== lastSec && left > 0){ lastSec = left; $("introNum").textContent = left; popNum(); sTick(); }
+        if (t >= INTRO_SECS){ showOv("introOv", false); loadQuestion(); }
+      } else if (phase === "question"){
+        const left = Q_SECS - t, sec = Math.max(1, Math.ceil(left));
+        $("prog").style.strokeDashoffset = (289 * (t / Q_SECS)).toFixed(1);
+        $("secs").textContent = sec;
+        if (sec !== lastSec){ lastSec = sec; if (sec <= 3) sTick(); }
+        $("ring").classList.toggle("hurry", left <= 3);
+        if (t >= Q_SECS) reveal();
+      } else if (phase === "reveal"){
+        if (t >= revealDur){
+          qi++;
+          if (qi >= BANK.length) endGame(); else loadQuestion();
+        }
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function setPaused(p){
+    if (phase === "idle" || phase === "end") return;
+    paused = p; showOv("pauseOv", p);
+    $("pauseBtn").textContent = p ? "Resume" : "Pause";
+  }
+
+  /* ---------- controls ---------- */
+  $("startBtn").onclick = startGame;
+  $("againBtn").onclick = startGame;
+  $("resumeBtn").onclick = () => setPaused(false);
+  $("pauseBtn").onclick = () => setPaused(!paused);
+  $("muteBtn").onclick = () => { muted = !muted; $("muteBtn").textContent = muted ? "Sound off" : "Sound on"; if(!muted){ ac(); beep(660,.15,"triangle",.5); } };
+  addEventListener("keydown", e => {
+    if (e.target.tagName === "BUTTON" && (e.key === " " || e.key === "Enter")) return;
+    if (e.target.tagName === "INPUT") return;
+    if (/^[1-4]$/.test(e.key)){ pick(+e.key - 1); return; }
+    if (e.key === " "){ e.preventDefault(); if (phase === "idle") startGame(); else setPaused(!paused); }
+    else if (e.key.toLowerCase() === "m") $("muteBtn").click();
+    else if (e.key.toLowerCase() === "r") startGame();
+  });
+
+  ["click","touchend"].forEach(ev => addEventListener(ev, () => ac(), {passive:true}));
+  last = performance.now();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
